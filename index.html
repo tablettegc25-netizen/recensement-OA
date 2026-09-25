@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recensement OA — GetecOI</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f6f8;color:#1f2933;font-family:Arial,sans-serif}
+header{background:#fff;border-bottom:1px solid #d8e3e9;padding:8px 18px;font-size:24px;font-weight:800;color:#07598e}
+main{max-width:900px;margin:20px auto;padding:0 14px}
+.card{background:#fff;border:1px solid #d6e2e8;border-radius:12px;padding:20px;margin-bottom:16px}
+h1{font-size:25px;margin:0 0 5px} h2{font-size:18px;margin:0 0 15px;color:#07598e;border-bottom:1px solid #dce8ee;padding-bottom:9px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+label{font-size:13px;font-weight:700;display:block;margin-bottom:5px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #bdccd5;border-radius:7px;font-size:15px;background:#fff;font-family:Arial,sans-serif;color:#1f2933}
+textarea{min-height:80px;resize:vertical}
+.gps{display:flex;gap:8px;align-items:end}
+button{border:0;border-radius:8px;padding:12px 16px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif}
+.green{background:#80bd10;color:#fff}.blue{background:#07598e;color:#fff}.grey{background:#eaf1f5;color:#1f2933}
+.photos{display:flex;gap:10px;flex-wrap:wrap}.photo-box{border:1px dashed #aebfc9;border-radius:8px;padding:12px;flex:1;min-width:220px}
+.actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #d6e2e8;padding:12px;display:flex;justify-content:flex-end;gap:10px;z-index:5}
+#result{display:none}.result-head{display:flex;justify-content:space-between;gap:10px;align-items:start}
+.photo-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.photo-preview img{width:110px;height:80px;object-fit:cover;border-radius:6px}
+.map-status{font-size:12px;color:#5f6f7b;margin-top:7px}.map-wrap{margin-top:12px;border:1px solid #bdccd5;border-radius:8px;overflow:hidden;background:#eef3ef}
+#mapImageWrap{display:none;position:relative;width:100%;line-height:0}
+#ignMapPreview{display:block;width:100%;height:auto;min-height:220px;object-fit:cover;background:#eef3ef}
+#mapMarker{display:block;position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);width:0;height:0;color:#d81b60;font-size:30px;line-height:1;text-shadow:0 1px 2px #fff,0 0 2px #fff;z-index:2}
+.map-placeholder{padding:28px;text-align:center;color:#6b7b86;font-size:13px}
+.print-sheet{background:#fff;color:#111;width:190mm;margin:0 auto;font-family:Arial,sans-serif}
+.print-top{display:grid;grid-template-columns:34mm 1fr 34mm;align-items:center;gap:5mm;padding:0 0 3mm;border-bottom:1.2px solid #07598e}
+.print-logo{width:30mm;height:17mm;object-fit:contain;object-position:left center}
+.print-top .print-logo:last-child{object-position:right center}
+.print-main-title{text-align:center;font-weight:700;font-size:12pt;line-height:1.15;color:#111}
+.print-commune{font-size:10pt;font-weight:400;margin-top:1mm}
+.fiche-title{height:9mm;line-height:9mm;background:#07598e;color:#fff;text-align:center;font-size:15pt;font-weight:700;margin:3mm 0 2mm}
+.print-table{width:100%;border-collapse:collapse;table-layout:fixed;margin:0 0 2mm;font-size:8.6pt}
+.print-table th,.print-table td{border:0.45pt solid #777;padding:1.25mm 1.5mm;vertical-align:middle;line-height:1.12}
+.print-table th{font-weight:700;text-align:left;background:#fff;color:#111}
+.print-section{background:#6e9fbb!important;color:#111!important;text-align:left!important;font-size:9pt;font-weight:700!important;height:6mm}
+.print-table tr:not(:first-child) th{width:19%}
+.print-table tr:not(:first-child) td{width:31%}
+.map-cell{padding:0!important;height:63mm;position:relative}
+.print-map{width:100%;height:63mm;object-fit:cover;border:0;display:block}
+.print-map-wrap{position:relative;width:100%;height:63mm;overflow:hidden}
+.print-map-marker{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);font-size:24pt;line-height:1;color:#d81b60;text-shadow:0 1px 2px #fff,0 0 2px #fff}
+.map-caption{font-size:6.8pt;color:#111;display:flex;justify-content:space-between;padding:0.5mm 0.8mm 0.7mm!important}
+.photo-title{font-size:9pt;font-weight:700;text-decoration:underline;border:0.45pt solid #777;border-bottom:0;padding:1.5mm 1.5mm 1mm;margin-top:1mm}
+.photo-frame{border:0.45pt solid #777;padding:2.5mm}
+.print-photos{display:grid;grid-template-columns:repeat(2,1fr);gap:5mm;justify-content:center;align-items:start}
+.print-photo-slot{height:47mm;border:0.45pt solid #777;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff}
+.print-photo-slot img{width:100%;height:100%;object-fit:cover;display:block}
+.print-photo-empty{font-size:7.5pt;color:#9aa5ad}
+.small-note{font-size:7pt;color:#4b5563}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.result-head{display:block}.actions{flex-direction:column}.actions button{width:100%}}
+@media print{
+ @page{size:A4 portrait;margin:5mm 8mm}
+ body{background:#fff!important}.no-print,#formPage,.actions{display:none!important}
+ #result{display:block!important;margin:0!important;padding:0!important}.card{border:0!important;padding:0!important;margin:0!important}
+ .print-sheet{width:100%;max-width:none}.print-table{page-break-inside:avoid}.print-map{height:63mm}
+}
+</style>
+
+<style id="print-layout-v5">
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 10mm 9mm 10mm;
+  }
+
+  html, body {
+    width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    font-family: Arial, sans-serif !important;
+    color: #111 !important;
+  }
+
+  body * {
+    font-family: Arial, sans-serif !important;
+  }
+
+  .print-sheet, #printSheet, .fiche-impression, .print-container {
+    width: 190mm !important;
+    max-width: 190mm !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+  }
+
+  .print-header {
+    display: grid !important;
+    grid-template-columns: 42mm 1fr 42mm !important;
+    align-items: center !important;
+    min-height: 18mm !important;
+    margin-bottom: 2mm !important;
+  }
+
+  .print-header .getec-logo {
+    justify-self: start !important;
+    max-width: 38mm !important;
+    max-height: 15mm !important;
+    object-fit: contain !important;
+  }
+
+  .print-header .header-title {
+    text-align: center !important;
+  }
+
+  .print-header .mairie-logo {
+    width: 38mm !important;
+    height: 15mm !important;
+    justify-self: end !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  .photo-slot {
+    border: 0 !important;
+    background: #fff !important;
+    min-height: 39mm !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+
+  .photo-slot img {
+    max-width: 100% !important;
+    max-height: 39mm !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 0 auto !important;
+  }
+
+  .photo-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 5mm !important;
+    width: 100% !important;
+    align-items: center !important;
+    justify-items: center !important;
+  }
+
+  .photo-grid .photo-slot {
+    width: 100% !important;
+  }
+
+  .photo-grid .photo-slot:only-child {
+    grid-column: 1 / -1 !important;
+    width: 90% !important;
+    justify-self: center !important;
+  }
+
+  .map-image {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 72mm !important;
+    object-fit: cover !important;
+    display: block !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: avoid !important;
+  }
+
+  tr, td, th {
+    page-break-inside: avoid !important;
+  }
+
+  .section {
+    page-break-inside: avoid !important;
+  }
+}
+</style>
+
+
+<style id="header-photo-v5">
+.print-header-v5 {
+  display:grid;
+  grid-template-columns:42mm 1fr 42mm;
+  align-items:center;
+  width:100%;
+  min-height:18mm;
+}
+.print-header-v5 .getec-logo-v5 { justify-self:start; max-width:38mm; max-height:15mm; object-fit:contain; }
+.print-header-v5 .title-v5 { text-align:center; font-family:Arial,sans-serif; }
+.print-header-v5 .mairie-placeholder-v5 {
+  width:38mm; height:15mm; justify-self:end;
+  background:#fff; border:0; 
+}
+.photo-grid-v5 {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5mm;
+  align-items:center;
+  justify-items:center;
+}
+.photo-slot-v5 {
+  min-height:39mm;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#fff;
+  border:0;
+  overflow:hidden;
+}
+.photo-slot-v5 img {
+  max-width:100%; max-height:39mm;
+  width:auto; height:auto; object-fit:contain; display:block; margin:auto;
+}
+.photo-grid-v5 .photo-slot-v5:only-child {
+  grid-column:1 / -1; width:90%; justify-self:center;
+}
+</style>
+
+
+<style id="recensement-photo-print-fix">
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 8mm 8mm 8mm;
+  }
+
+  html, body {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif !important;
+    color: #111 !important;
+    background: #fff !important;
+  }
+
+  .photo-slot,
+  .photo-placeholder,
+  .photo-box,
+  .photo-frame {
+    border: none !important;
+    outline: none !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .photos-container,
+  .photo-grid {
+    border: none !important;
+    background: #fff !important;
+  }
+
+  .photo-grid {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 5mm !important;
+    width: 100% !important;
+  }
+
+  .photo-slot {
+    flex: 0 0 auto !important;
+    width: 82mm !important;
+    height: 52mm !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+
+  .photo-slot img {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: auto !important;
+  }
+
+  /* Si une seule photo est présente, elle reste centrée dans l'espace total. */
+  .photo-grid.single-photo {
+    justify-content: center !important;
+  }
+
+  /* Les emplacements vides restent blancs et conservent leur place. */
+  .photo-slot.empty {
+    visibility: visible !important;
+  }
+
+  #mairieLogoZone {
+    border: none !important;
+    background: #fff !important;
+  }
+}
+
+/* En-tête imprimé : zone mairie volontairement vide à gauche, Getec OI à droite. */
+.print-top{
+  display:grid !important;
+  grid-template-columns:42mm 1fr 42mm !important;
+  align-items:center !important;
+  gap:5mm !important;
+  min-height:18mm !important;
+  padding:0 0 3mm !important;
+  border-bottom:1.2px solid #07598e !important;
+}
+.print-mairie-blank{
+  width:38mm;
+  height:15mm;
+}
+.print-header-title{text-align:center;font-family:Arial,sans-serif;color:#111;}
+.print-header-main{font-size:12pt;font-weight:700;line-height:1.15;}
+.print-header-commune{font-size:9pt;font-weight:400;margin-top:1mm;}
+.print-top .print-logo{
+  width:38mm !important;
+  height:15mm !important;
+  object-fit:contain !important;
+  object-position:right center !important;
+  justify-self:end !important;
+}
+</style>
+
+
+<style id="final-a4-recensement-layout">
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 9mm 10mm 8mm 10mm;
+  }
+
+  html, body {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+    font-family: Arial, sans-serif !important;
+  }
+
+  /* The editing-page header must never be printed. */
+  body > header,
+  header {
+    display: none !important;
+  }
+
+  #formPage, .no-print, .actions {
+    display: none !important;
+  }
+
+  #result {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-sheet {
+    width: 190mm !important;
+    max-width: 190mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+    font-family: Arial, sans-serif !important;
+  }
+
+  /* HEADER: left intentionally empty, title centered, Getec OI on the right. */
+  .print-top {
+    width: 190mm !important;
+    height: 17mm !important;
+    display: grid !important;
+    grid-template-columns: 38mm 1fr 38mm !important;
+    align-items: center !important;
+    gap: 3mm !important;
+    padding: 0 0 2mm !important;
+    margin: 0 !important;
+    border-bottom: 0.45pt solid #07598e !important;
+  }
+
+  .print-mairie-blank {
+    width: 38mm !important;
+    height: 14mm !important;
+    background: #fff !important;
+  }
+
+  .print-header-title {
+    text-align: center !important;
+    font-family: Arial, sans-serif !important;
+    color: #111 !important;
+    line-height: 1.1 !important;
+  }
+
+  .print-header-main {
+    font-size: 10.5pt !important;
+    font-weight: 700 !important;
+    color: #111 !important;
+  }
+
+  .print-header-commune {
+    font-size: 7.5pt !important;
+    font-weight: 400 !important;
+    color: #111 !important;
+    margin-top: 0.7mm !important;
+  }
+
+  .print-top > img.print-logo {
+    width: 31mm !important;
+    height: 13mm !important;
+    justify-self: end !important;
+    object-fit: contain !important;
+    object-position: right center !important;
+    display: block !important;
+  }
+
+  /* Main blue title bar */
+  .fiche-title {
+    height: 8mm !important;
+    line-height: 8mm !important;
+    margin: 2mm 0 1.5mm !important;
+    padding: 0 !important;
+    background: #07598e !important;
+    color: #fff !important;
+    text-align: center !important;
+    font-family: Arial, sans-serif !important;
+    font-size: 11pt !important;
+    font-weight: 700 !important;
+  }
+
+  .print-table {
+    width: 190mm !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    margin: 0 0 1.2mm !important;
+    padding: 0 !important;
+    font-family: Arial, sans-serif !important;
+    font-size: 7.3pt !important;
+    color: #111 !important;
+  }
+
+  .print-table th,
+  .print-table td {
+    border: 0.45pt solid #777 !important;
+    padding: 1.05mm 1.15mm !important;
+    vertical-align: middle !important;
+    line-height: 1.08 !important;
+    height: 5.3mm !important;
+    background: #fff !important;
+    color: #111 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .print-table th {
+    font-weight: 700 !important;
+    text-align: left !important;
+  }
+
+  .print-table .print-section {
+    height: 5.5mm !important;
+    padding: 0.8mm 1.2mm !important;
+    background: #78a5bb !important;
+    color: #111 !important;
+    text-align: left !important;
+    font-size: 7.8pt !important;
+    font-weight: 700 !important;
+  }
+
+  /* Four equal columns: label/value/label/value. */
+  .print-table tr:not(:first-child) th { width: 18% !important; }
+  .print-table tr:not(:first-child) td { width: 32% !important; }
+
+  /* Localization */
+  .map-cell {
+    width: 50% !important;
+    height: 50mm !important;
+    padding: 0 !important;
+    vertical-align: top !important;
+    position: relative !important;
+  }
+
+  .map-reserved {
+    width: 50% !important;
+    height: 50mm !important;
+    background: #fff !important;
+    border: 0.45pt solid #777 !important;
+  }
+
+  .print-map-wrap {
+    width: 100% !important;
+    height: 46mm !important;
+    overflow: hidden !important;
+    position: relative !important;
+    background: #fff !important;
+  }
+
+  .print-map {
+    width: 100% !important;
+    height: 46mm !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+    display: block !important;
+    border: 0 !important;
+  }
+
+  .print-map-marker {
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -100%) !important;
+    font-size: 16pt !important;
+    line-height: 1 !important;
+    color: #d81b60 !important;
+    text-shadow: 0 1px 2px #fff, 0 0 2px #fff !important;
+    z-index: 2 !important;
+  }
+
+  .map-caption {
+    height: 4mm !important;
+    padding: 0.6mm 1mm 0 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-family: Arial, sans-serif !important;
+    font-size: 5.8pt !important;
+    line-height: 1 !important;
+    color: #111 !important;
+  }
+
+  /* Photos: reserved white area, no visible frames. */
+  .photo-title {
+    height: 5mm !important;
+    line-height: 5mm !important;
+    margin: 0 !important;
+    padding: 0.5mm 1.2mm !important;
+    border: 0.45pt solid #777 !important;
+    border-bottom: 0 !important;
+    background: #fff !important;
+    font-size: 7.5pt !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+  }
+
+  .photo-frame {
+    height: 47mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0.45pt solid #777 !important;
+    background: #fff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .print-photos {
+    width: 100% !important;
+    height: 47mm !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-photo-slot {
+    width: 82mm !important;
+    height: 43mm !important;
+    flex: 0 0 82mm !important;
+    border: 0 !important;
+    outline: 0 !important;
+    background: #fff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+
+  .print-photo-slot:only-child {
+    width: 100mm !important;
+    flex-basis: 100mm !important;
+  }
+
+  .print-photo-slot img {
+    max-width: 100% !important;
+    max-height: 43mm !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: auto !important;
+  }
+
+  .print-photo-empty {
+    display: none !important;
+  }
+
+  /* Never split the actual printed sheet across pages. */
+  .print-sheet,
+  .print-table,
+  .photo-title,
+  .photo-frame {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+</style>
+
+
+<style id="recensement-v6-overrides">
+.map-tools{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-left:4px}
+.map-tools-label{font-size:12px;font-weight:700;color:#334155;margin-left:3px}
+.map-tool{padding:7px 9px;border:1px solid #b8c9d3;border-radius:7px;background:#fff;color:#1f2933;font-size:12px;font-weight:700}
+.map-tool.active{background:#07598e;color:#fff;border-color:#07598e}
+#mapImageWrap{min-height:300px}
+#ignMapPreview{min-height:300px}
+@media(max-width:900px){.map-tools{width:100%;margin-left:0}}
+@media print{
+  @page{size:A4 portrait;margin:8mm 10mm 7mm 10mm}
+  .print-sheet{width:190mm!important;max-width:190mm!important}
+  .map-cell{height:56mm!important;padding:0!important}
+  .print-map-wrap{height:52mm!important}
+  .print-map{height:52mm!important;width:100%!important;object-fit:cover!important}
+  .map-caption{height:4mm!important;font-size:5.8pt!important}
+  .photo-frame{height:53mm!important;padding:0!important}
+  .print-photos{height:53mm!important;gap:5mm!important}
+  .print-photo-slot{width:90mm!important;flex:0 0 90mm!important;height:49mm!important;border:0!important}
+  .print-photo-slot img{max-width:90mm!important;max-height:49mm!important;width:auto!important;height:auto!important;object-fit:contain!important}
+  .print-photo-empty{display:none!important}
+}
+</style>
+</head>
+<body>
+<header>
+<div style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 0;">
+  <div style="width:150px;height:48px;display:flex;align-items:center;">
+    <img src="data:image/webp;base64,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" alt="Getec OI — Génie civil"
+         style="max-height:48px;max-width:145px;width:auto;height:auto;object-fit:contain;display:block;">
+  </div>
+  <div style="flex:1;text-align:center;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#123d5b;">
+    Recensement des ouvrages
+    <div style="font-size:12px;font-weight:400;color:#111;">Commune : <span id="headerCommune">—</span></div>
+  </div>
+  <div id="mairieLogoZone" style="width:150px;height:48px;display:flex;align-items:center;justify-content:flex-end;"></div>
+</div>
+</header>
+
+<main id="formPage">
+<div class="card">
+<h1>Fiche de recensement</h1>
+<div style="color:#5f6f7b">Outil terrain — remplir directement sur tablette.</div>
+</div>
+
+<div class="card">
+<h2>Identification</h2>
+<div class="grid">
+<div><label>Identifiant OA</label><input id="id" placeholder="Ex. OA-ETSA-001"></div>
+<div><label>Commune</label><input id="commune" value="Étang-Salé"></div>
+<div><label>Lieu-dit / quartier</label><input id="lieu"></div>
+<div><label>Gestionnaire</label><input id="gestionnaire"></div>
+<div><label>Propriétaire</label><input id="proprietaire"></div>
+<div><label>Type de voie</label><input id="voie"></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Localisation</h2>
+<div class="grid">
+<div><label>Latitude</label><input id="lat" readonly></div>
+<div><label>Longitude</label><input id="lon" readonly></div>
+</div>
+<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<button type="button" class="green" onclick="gps()">📍 Ma position</button>
+<button type="button" class="grey" onclick="clearGPS()">Effacer GPS</button>
+<div class="map-tools" aria-label="Réglages de carte">
+  <span class="map-tools-label">Fond :</span>
+  <button type="button" class="map-tool active" id="layerPlanBtn" onclick="setMapLayer('plan')">Plan IGN</button>
+  <button type="button" class="map-tool" id="layerOrthoBtn" onclick="setMapLayer('ortho')">Vue aérienne IGN</button>
+  <span class="map-tools-label">Échelle :</span>
+  <button type="button" class="map-tool active" data-scale="5000" onclick="setMapScale(5000)">1:5 000</button>
+  <button type="button" class="map-tool" data-scale="2500" onclick="setMapScale(2500)">1:2 500</button>
+  <button type="button" class="map-tool" data-scale="1000" onclick="setMapScale(1000)">1:1 000</button>
+  <button type="button" class="map-tool" data-scale="500" onclick="setMapScale(500)">1:500</button>
+</div>
+</div>
+<div id="mapStatus" class="map-status">Cliquez sur « Ma position ». La recherche GPS peut prendre jusqu’à 45 secondes sur une tablette lorsque le signal est faible.</div>
+<div class="map-wrap"><div id="mapImageWrap"><img id="ignMapPreview" alt="Carte IGN autour de la position"><div id="mapMarker" aria-hidden="true">●</div></div><div id="mapPlaceholder" class="map-placeholder">Le plan IGN au 1:5 000 apparaîtra ici après récupération de la position.</div></div>
+<div style="margin-top:12px"><label>Accès / localisation</label><textarea id="acces" placeholder="Ex. Accès depuis la route communale..."></textarea></div>
+</div>
+
+<div class="card">
+<h2>Caractéristiques de l'ouvrage</h2>
+<div class="grid">
+<div><label>Type d’ouvrage</label><input id="type" placeholder="Pont dalle, dalot, passerelle..."></div>
+<div><label>Matériaux / Structure</label><input id="materiaux" placeholder="Béton armé, maçonnerie..."></div>
+<div><label>PI ou PS</label><input id="piPs" placeholder="PI / PS"></div>
+<div><label>Nombre de travées</label><input id="travees" type="number" min="0" step="1"></div>
+<div><label>Portée / ouverture (m)</label><input id="portee" type="number" step="0.01"></div>
+<div><label>Longueur totale (m)</label><input id="longueur" type="number" step="0.01"></div>
+<div><label>Largeur totale (m)</label><input id="largeurTotale" type="number" step="0.01"></div>
+<div><label>Largeur utile (m)</label><input id="largeurUtile" type="number" step="0.01"></div>
+<div><label>Voie portée</label><input id="voiePortee"></div>
+<div><label>Voie franchie</label><input id="voieFranchie"></div>
+<div><label>Nombre de voies</label><input id="nbVoies"></div>
+<div><label>Trottoirs / cheminement</label><input id="trottoirs"></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Accessibilité et observations</h2>
+<div class="grid">
+<div><label>Moyen d’accès</label><input id="moyen"></div>
+<div><label>Contraintes / observation</label><textarea id="observations"></textarea></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Photos de l’ouvrage</h2>
+<div class="photo-box">
+<label>Photo(s) de l’ouvrage</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+  <button type="button" class="green" onclick="openCamera()">📷 Prendre une photo</button>
+  <button type="button" class="grey" onclick="openGallery()">🖼️ Choisir une photo</button>
+</div>
+<input id="cameraInput" type="file" accept="image/*" capture="environment" multiple style="display:none" onchange="addPhotoFiles(this.files)">
+<input id="galleryInput" type="file" accept="image/*" multiple style="display:none" onchange="addPhotoFiles(this.files)">
+<div id="preview" class="photo-preview"></div>
+<div class="map-status">Deux emplacements photo sont réservés sur la fiche imprimée, même si aucune photo n’est prise sur la tablette.</div>
+</div>
+</div>
+
+<div class="actions">
+<button class="grey" onclick="resetForm()">Nouvelle fiche</button>
+<button class="blue" onclick="showFiche()">📄 Générer la fiche</button>
+</div>
+</main>
+
+<main id="result">
+<div class="print-sheet">
+  <div class="print-top">
+    <div class="print-mairie-blank" aria-label="Emplacement libre pour le logo de la commune"></div>
+    <div class="print-header-title">
+      <div class="print-header-main">Recensement des ouvrages</div>
+      <div class="print-header-commune">Commune de <span id="rHeaderCommune"></span></div>
+    </div>
+    <img src="data:image/webp;base64,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" class="print-logo" alt="Getec OI — Génie civil">
+  </div>
+
+  <div class="fiche-title">Fiche Ouvrage</div>
+
+  <table class="print-table">
+    <tr><th colspan="4" class="print-section">1. IDENTIFICATION</th></tr>
+    <tr>
+      <th>Identifiant</th><td id="rId"></td>
+      <th>Commune</th><td id="rCommune2"></td>
+    </tr>
+    <tr>
+      <th>Lieu-dit / quartier</th><td id="rLieu"></td>
+      <th>Gestionnaire</th><td id="rGestionnaire"></td>
+    </tr>
+    <tr>
+      <th>Propriétaire</th><td id="rProprietaire"></td>
+      <th>Type de voie</th><td id="rVoie"></td>
+    </tr>
+  </table>
+
+  <table class="print-table">
+    <tr><th colspan="4" class="print-section">2. LOCALISATION</th></tr>
+    <tr>
+      <th>Coordonnées GPS</th><td>Lat : <span id="rLat"></span> / Long : <span id="rLon"></span></td>
+      <th>Accès / localisation</th><td id="rAcces"></td>
+    </tr>
+    <tr>
+      <td colspan="4" class="map-cell">
+        <div class="print-map-wrap">
+          <img id="rMap" class="print-map" alt="Plan IGN — localisation de l’ouvrage">
+          <div id="rMapMarker" class="print-map-marker">●</div>
+        </div>
+        <div class="map-caption"><span>Plan IGN — localisation de l’ouvrage</span><span>Source : IGN / Géoplateforme</span></div>
+      </td>
+      <td colspan="2" class="map-reserved"></td>
+    </tr>
+  </table>
+
+  <table class="print-table">
+    <tr><th colspan="4" class="print-section">3. CARACTERISTIQUES DE L’OUVRAGE</th></tr>
+    <tr><th>Type d’ouvrage</th><td id="rType"></td><th>Matériaux / Structure</th><td id="rMateriaux"></td></tr>
+    <tr><th>PI ou PS</th><td id="rPiPs"></td><th>Nombre de travées</th><td id="rTravees"></td></tr>
+    <tr><th>Portée / ouverture</th><td id="rPortee"></td><th>Longueur totale</th><td id="rLongueur"></td></tr>
+    <tr><th>Largeur totale</th><td id="rLargeurTotale"></td><th>Largeur utile</th><td id="rLargeurUtile"></td></tr>
+    <tr><th>Voie portée</th><td id="rVoiePortee"></td><th>Voie franchie</th><td id="rVoieFranchie"></td></tr>
+    <tr><th>Nombre de voies</th><td id="rNbVoies"></td><th>Trottoirs / cheminement</th><td id="rTrottoirs"></td></tr>
+  </table>
+
+  <table class="print-table">
+    <tr><th colspan="4" class="print-section">4. ACCESSIBILITE ET OBSERVATIONS</th></tr>
+    <tr><th>Moyen d’accès</th><td id="rMoyen"></td><th>Contraintes / observation</th><td id="rObservations"></td></tr>
+  </table>
+
+  <div class="photo-title">PHOTO(S) DE L’OUVRAGE :</div>
+  <div class="photo-frame"><div id="rPhotos" class="print-photos">
+    <div class="print-photo-slot"></div>
+    <div class="print-photo-slot"></div>
+  </div></div>
+</div>
+
+<div class="actions no-print">
+<button class="grey" onclick="back()">← Modifier la fiche</button>
+<button class="green" onclick="window.print()">🖨️ Imprimer / PDF</button>
+</div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const IGN_WMS='https://data.geopf.fr/wms-r/wms';
+const GEOCODAGE_REVERSE='https://data.geopf.fr/geocodage/reverse';
+let currentLat=null, currentLon=null;
+let currentMapLayer='plan';
+let currentMapScale=5000;
+let printMapUrl='';
+
+function lonLatTo3857(lon,lat){
+ const x=lon*20037508.34/180;
+ const y=Math.log(Math.tan((90+lat)*Math.PI/360))/(Math.PI/180)*20037508.34/180;
+ return [x,y];
+}
+function buildMapUrl(lat,lon,scale=5000,layer='plan',widthPx=1200,heightPx=620){
+ const dpi=96;
+ const groundW=widthPx*0.0254/dpi*scale;
+ const groundH=heightPx*0.0254/dpi*scale;
+ const [x,y]=lonLatTo3857(lon,lat);
+ const correction=Math.max(0.15,Math.cos(lat*Math.PI/180));
+ const mapW=groundW/correction, mapH=groundH/correction;
+ const bbox=[x-mapW/2,y-mapH/2,x+mapW/2,y+mapH/2];
+ const q=new URLSearchParams({SERVICE:'WMS',VERSION:'1.3.0',REQUEST:'GetMap',LAYERS:layer==='ortho'?'ORTHOIMAGERY.ORTHOPHOTOS':'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2',STYLES:'',CRS:'EPSG:3857',BBOX:bbox.join(','),WIDTH:String(widthPx),HEIGHT:String(heightPx),FORMAT:'image/jpeg',TRANSPARENT:'FALSE'});
+ return IGN_WMS+'?'+q.toString();
+}
+function updateMapButtons(){
+ document.querySelectorAll('.map-tool[data-scale]').forEach(b=>b.classList.toggle('active',Number(b.dataset.scale)===currentMapScale));
+ $('layerPlanBtn').classList.toggle('active',currentMapLayer==='plan');
+ $('layerOrthoBtn').classList.toggle('active',currentMapLayer==='ortho');
+}
+function setMapLayer(layer){
+ currentMapLayer=layer; updateMapButtons();
+ if(currentLat!==null) setMap(currentLat,currentLon,false);
+}
+function setMapScale(scale){
+ currentMapScale=Number(scale); updateMapButtons();
+ if(currentLat!==null) setMap(currentLat,currentLon,false);
+}
+function setMap(lat,lon,makePrintMap=true){
+ currentLat=lat; currentLon=lon;
+ const url=buildMapUrl(lat,lon,currentMapScale,currentMapLayer,1200,620);
+ $('ignMapPreview').src=url;
+ $('mapImageWrap').style.display='block';
+ $('mapPlaceholder').style.display='none';
+ $('mapStatus').textContent=(currentMapLayer==='ortho'?'Vue aérienne IGN':'Plan IGN')+' en cours de chargement — échelle 1 : '+currentMapScale.toLocaleString('fr-FR')+'…';
+ $('ignMapPreview').onerror=()=>{ $('mapStatus').textContent='GPS récupéré, mais la carte IGN n’a pas pu être chargée. Vérifiez la connexion Internet.'; };
+ $('ignMapPreview').onload=()=>{ $('mapStatus').textContent=(currentMapLayer==='ortho'?'Vue aérienne IGN':'Plan IGN')+' chargée — échelle 1 : '+currentMapScale.toLocaleString('fr-FR')+' — repère au centre de la position.'; };
+ if(makePrintMap || !printMapUrl){
+   // La fiche papier reste toujours sur le Plan IGN au 1:5000, même si l’utilisateur zoome ou passe en vue aérienne sur la tablette.
+   printMapUrl=buildMapUrl(lat,lon,5000,'plan',1600,520);
+ }
+}
+async function reverseGeocode(lat,lon){
+ try{
+   const u=new URL(GEOCODAGE_REVERSE);
+   u.searchParams.set('lon',lon); u.searchParams.set('lat',lat); u.searchParams.set('index','address,poi');
+   const controller=new AbortController();
+   const timer=setTimeout(()=>controller.abort(),12000);
+   const r=await fetch(u.toString(),{signal:controller.signal,cache:'no-store'});
+   clearTimeout(timer);
+   if(!r.ok) throw new Error('HTTP '+r.status);
+   const data=await r.json();
+   const f=data.features && data.features[0];
+   const p=f && (f.properties||{});
+   const commune=p.city || p.commune || p.municipality || p.cityname || p.locality || '';
+   if(commune){ $('commune').value=commune; }
+   return commune;
+ }catch(e){ return ''; }
+}
+let bestGpsAccuracy=null;
+function gps(){
+ if(!navigator.geolocation){ alert('La géolocalisation n’est pas disponible sur cet appareil.'); return; }
+ $('mapStatus').textContent='Recherche de votre position précise… cela peut prendre jusqu’à 45 secondes.';
+ bestGpsAccuracy=null;
+ let bestPosition=null;
+ let watchId=null;
+ let finished=false;
+ const started=Date.now();
+ const finish=async position=>{
+   if(finished) return; finished=true;
+   if(watchId!==null) navigator.geolocation.clearWatch(watchId);
+   const c=position.coords; const lat=c.latitude, lon=c.longitude;
+   const acc=Number.isFinite(c.accuracy)?c.accuracy:null;
+   bestGpsAccuracy=acc; currentLat=lat; currentLon=lon;
+   $('lat').value=lat.toFixed(7); $('lon').value=lon.toFixed(7);
+   setMap(lat,lon,true);
+   const a=acc!==null?Math.round(acc):null;
+   $('mapStatus').textContent='Position GPS récupérée'+(a!==null?' — précision estimée ±'+a+' m. ':' — ');
+   const commune=await reverseGeocode(lat,lon);
+   if(commune){ $('mapStatus').textContent+='Commune détectée : '+commune+'. La commune reste modifiable.'; }
+   else { $('mapStatus').textContent+='La commune n’a pas pu être détectée automatiquement ; vous pouvez la saisir/modifier.'; }
+ };
+ const onPosition=position=>{
+   const acc=Number.isFinite(position.coords.accuracy)?position.coords.accuracy:Infinity;
+   if(!bestPosition || acc < (bestGpsAccuracy??Infinity)){ bestPosition=position; bestGpsAccuracy=acc; }
+   const elapsed=Date.now()-started;
+   if(acc<=10 || (elapsed>=30000 && bestPosition)) finish(bestPosition);
+ };
+ const onError=()=>{
+   if(finished) return;
+   if(bestPosition){ finish(bestPosition); return; }
+   finished=true; if(watchId!==null) navigator.geolocation.clearWatch(watchId);
+   $('mapStatus').textContent='Impossible de récupérer le GPS après 45 secondes. Vérifiez la localisation/GPS et réessayez.';
+   alert('Impossible de récupérer le GPS. Sur tablette, vérifiez que la localisation est activée et que Chrome a bien l’autorisation de localisation.');
+ };
+ try{
+   watchId=navigator.geolocation.watchPosition(onPosition,onError,{enableHighAccuracy:true,timeout:45000,maximumAge:0});
+   [20000,30000,40000].forEach(ms=>setTimeout(()=>{
+     if(finished) return;
+     if(bestPosition && ms>=30000) finish(bestPosition);
+     else navigator.geolocation.getCurrentPosition(onPosition,()=>{}, {enableHighAccuracy:true,timeout:10000,maximumAge:0});
+   },ms));
+   setTimeout(()=>{ if(!finished){ if(bestPosition) finish(bestPosition); else onError(); } },45000);
+ }catch(e){ alert('La géolocalisation ne peut pas être utilisée sur cet appareil.'); }
+}
+function clearGPS(){ currentLat=null; currentLon=null; printMapUrl=''; $('lat').value=''; $('lon').value=''; $('ignMapPreview').removeAttribute('src'); $('mapImageWrap').style.display='none'; $('mapPlaceholder').style.display='block'; $('mapStatus').textContent='Cliquez sur « Ma position ». La recherche GPS peut prendre jusqu’à 45 secondes sur une tablette lorsque le signal est faible.'; }
+let selectedPhotos=[];
+function openCamera(){ $('cameraInput').click(); }
+function openGallery(){ $('galleryInput').click(); }
+function compressImage(file,maxSide=1800,quality=0.72){
+ return new Promise(resolve=>{
+   const img=new Image(); const url=URL.createObjectURL(file);
+   img.onload=()=>{
+     const ratio=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
+     const w=Math.max(1,Math.round(img.naturalWidth*ratio)); const h=Math.max(1,Math.round(img.naturalHeight*ratio));
+     const c=document.createElement('canvas'); c.width=w; c.height=h; const ctx=c.getContext('2d');
+     ctx.drawImage(img,0,0,w,h); URL.revokeObjectURL(url);
+     c.toBlob(blob=>{ resolve(blob||file); },'image/jpeg',quality);
+   };
+   img.onerror=()=>{URL.revokeObjectURL(url); resolve(file);};
+   img.src=url;
+ });
+}
+async function addPhotoFiles(files){
+ $('mapStatus').textContent='Préparation des photos pour alléger la fiche…';
+ for(const f of [...files]){ if(f && f.type.startsWith('image/') && selectedPhotos.length<2){ const blob=await compressImage(f); selectedPhotos.push(new File([blob],(f.name||'photo').replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'})); } }
+ selectedPhotos=selectedPhotos.slice(0,2); renderPhotoPreview();
+ $('mapStatus').textContent='Photos prêtes. Les images sont compressées pour garder un PDF léger.';
+}
+function renderPhotoPreview(){ $('preview').innerHTML=''; selectedPhotos.forEach(f=>{const img=document.createElement('img');img.src=URL.createObjectURL(f);$('preview').appendChild(img)}); }
+function previewPhotos(){ renderPhotoPreview(); }
+function val(id){return $(id).value||'—'}
+function showFiche(){
+ $('rId').textContent=val('id'); $('rCommune2').textContent=val('commune'); $('rHeaderCommune').textContent=val('commune');
+ $('rLieu').textContent=val('lieu'); $('rVoie').textContent=val('voie'); $('rGestionnaire').textContent=val('gestionnaire'); $('rProprietaire').textContent=val('proprietaire');
+ $('rLat').textContent=val('lat'); $('rLon').textContent=val('lon'); $('rAcces').textContent=val('acces');
+ $('rType').textContent=val('type'); $('rMateriaux').textContent=val('materiaux'); $('rPiPs').textContent=val('piPs'); $('rTravees').textContent=val('travees'); $('rPortee').textContent=val('portee'); $('rLongueur').textContent=val('longueur'); $('rLargeurTotale').textContent=val('largeurTotale'); $('rLargeurUtile').textContent=val('largeurUtile'); $('rVoiePortee').textContent=val('voiePortee'); $('rVoieFranchie').textContent=val('voieFranchie'); $('rNbVoies').textContent=val('nbVoies'); $('rTrottoirs').textContent=val('trottoirs'); $('rMoyen').textContent=val('moyen'); $('rObservations').textContent=val('observations');
+ const mapSrc=printMapUrl || $('ignMapPreview').getAttribute('src');
+if(mapSrc){
+  $('rMap').src=mapSrc; $('rMap').style.display='block'; $('rMapMarker').style.display='block';
+}else{
+  $('rMap').removeAttribute('src'); $('rMap').style.display='none'; $('rMapMarker').style.display='none';
+}
+ $('rPhotos').innerHTML='';
+for(let i=0;i<2;i++){
+  const slot=document.createElement('div'); slot.className='print-photo-slot';
+  if(selectedPhotos[i]){
+    const img=document.createElement('img'); img.src=URL.createObjectURL(selectedPhotos[i]); slot.appendChild(img);
+  }else{
+    const empty=document.createElement('span'); empty.className='print-photo-empty'; empty.textContent='Emplacement photo'; slot.appendChild(empty);
+  }
+  $('rPhotos').appendChild(slot);
+}
+ $('formPage').style.display='none'; $('result').style.display='block'; window.scrollTo(0,0);
+}
+function back(){$('result').style.display='none';$('formPage').style.display='block';window.scrollTo(0,0)}
+function resetForm(){if(confirm('Effacer la fiche actuelle ?')){document.querySelectorAll('input,textarea').forEach(e=>{if(e.id!=='commune')e.value=''});selectedPhotos=[];$('cameraInput').value='';$('galleryInput').value='';$('preview').innerHTML='';clearGPS();}}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  function updatePhotoGridCentering() {
+    document.querySelectorAll('.photo-grid').forEach(function(grid) {
+      const imgs = grid.querySelectorAll('img');
+      let count = 0;
+      imgs.forEach(function(img) {
+        if (img.getAttribute('src') && !img.getAttribute('src').startsWith('data:,') &&
+            img.offsetWidth > 0 && img.offsetHeight > 0) count++;
+      });
+      grid.classList.toggle('single-photo', count === 1);
+    });
+  }
+  updatePhotoGridCentering();
+  const observer = new MutationObserver(updatePhotoGridCentering);
+  observer.observe(document.body, {childList:true, subtree:true, attributes:true});
+});
+</script>
+
+</body>
+</html>
